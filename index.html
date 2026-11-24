@@ -87,7 +87,7 @@
       <div class="head" style="background:var(--caja)">Cajera<small>rol nuevo</small></div>
       <div class="head" style="background:var(--dep)">Encargado de depósito<small>rol nuevo</small></div>
       <div class="head" style="background:var(--taller)">Taller externo<small>confección · roller</small></div>
-      <div class="head" style="background:var(--inst)">Instalador<small>colocación</small></div>
+      <div class="head" style="background:var(--inst)">Instalador<small>instala · mide · repara</small></div>
     </div>
     <div class="grid" id="grid"></div>
   </div>
@@ -108,7 +108,7 @@ const ROWS = [
   { lane:'vend', node:{id:'d1', type:'dec', title:'¿El cliente aprueba?'},
     minis:[{id:'m_seg', kind:'future', title:'Seguimiento', text:'Alerta / WhatsApp a quien no cerró (fase posterior)'}] },
   { lane:'vend', node:{id:'n2', type:'step', n:2, title:'Envía a facturar', desc:'Se crea el pedido en Tango con su número.', tags:[['v1','Hoy en MCD'],['state','Enviado a facturar']]} },
-  { lane:'caja', node:{id:'n3', type:'step', n:3, title:'Bandeja de caja · legajo', desc:'MCD detecta la facturación vía la API de pedidos de Tango. La cajera crea el legajo LB‑n° cotización y registra la seña (40%) o el pago total.', tags:[['new','Nuevo'],['state','Trabajo señado p/ producción']]} },
+  { lane:'caja', node:{id:'n3', type:'step', n:3, title:'Bandeja de caja · legajo', desc:'MCD detecta la facturación vía la API de pedidos de Tango. La cajera crea el legajo LB‑n° cotización y registra el pago: seña (40%), total, cuenta corriente o canje.', tags:[['new','Nuevo'],['state','Trabajo señado p/ producción']]} },
   { lane:'caja', node:{id:'d2', type:'dec', title:'¿Tiene seña?'},
     minis:[{id:'m_stop', kind:'stop', title:'⛔ Sin seña', text:'No se inicia el trabajo'}] },
   { lane:'caja', node:{id:'d3', type:'dec', title:'¿Lleva confección?'},
@@ -116,8 +116,8 @@ const ROWS = [
   { lane:'dep', node:{id:'n4', type:'step', n:4, title:'Revisa la orden de taller', desc:'Ve el detalle y el total de metros por tela.', tags:[['new','Nuevo']]} },
   { lane:'dep', node:{id:'d4', type:'dec', title:'¿Hay tela?'},
     minis:[{id:'m_tela', kind:'warn', title:'🟠 Falta tela', text:'Notifica a gerencia. Sigue cuando llega.'}] },
-  { lane:'dep', node:{id:'n5', type:'step', n:5, title:'Corta telas y asigna taller', desc:'Elige el taller; queda registrado para su pago.', tags:[['state','Trabajo en preparación'],['red','🔴 +7 días']]} },
-  { lane:'taller', node:{id:'n6', type:'step', n:6, title:'Elabora el trabajo', desc:'Confección o roller del proveedor. La orden de taller va impresa.', tags:[['state','Trabajo en taller'],['red','🔴 máx. 7 días']]},
+  { lane:'dep', node:{id:'n5', type:'step', n:5, title:'Corta telas y asigna taller', desc:'Asigna taller por ítem: un pedido puede ir a varios talleres. Queda registrado para su pago.', tags:[['state','Trabajo en preparación'],['red','🔴 +7 días']]} },
+  { lane:'taller', node:{id:'n6', type:'step', n:6, title:'Elabora el trabajo', desc:'Talleres de confección o roller (Flexcolor, Seventeen). La orden de taller va impresa.', tags:[['state','Trabajo en taller'],['red','🔴 máx. 7 días']]},
     minis:[{id:'m_liq', kind:'info', title:'💵 Liquidación', text:'Cuánto pagarle al taller (cálculo inverso)'}] },
   { lane:'dep', node:{id:'n7', type:'step', n:7, title:'Recibe y controla', desc:'Revisa el trabajo terminado y lo deja en la estantería.', tags:[['state','Trabajo terminado']]},
     minis:[{id:'m_mal', kind:'future', title:'Si viene mal', text:'¿Vuelve al taller? (a confirmar)'}] },
@@ -125,7 +125,7 @@ const ROWS = [
   { lane:'caja', node:{id:'n9', type:'step', n:9, title:'Cobra el saldo', desc:'El cliente cancela antes de retirar o de la instalación.', tags:[['new','Nuevo']]} },
   { lane:'caja', node:{id:'d5', type:'dec', title:'¿Con instalación?'},
     minis:[{id:'m_ret', kind:'done', title:'El cliente retira', text:'→ Entregado'}] },
-  { lane:'caja', node:{id:'n10', type:'step', n:10, title:'Agenda la instalación', desc:'Asigna turno e instalador en el calendario y envía la orden de instalación.', tags:[['new','Nuevo'],['state','Instalación programada']]} },
+  { lane:'caja', node:{id:'n10', type:'step', n:10, title:'Agenda la instalación', desc:'Turno e instalador en la agenda (que también tiene mediciones y reparaciones) y envía la orden de instalación.', tags:[['new','Nuevo'],['state','Instalación programada']]} },
   { lane:'dep', node:{id:'n11', type:'step', n:11, title:'Arma el pedido', desc:'Suma rieles y accesorios. Revisión final junto a la cajera.', tags:[['new','Nuevo']]} },
   { lane:'inst', node:{id:'n12', type:'step', n:12, title:'Coloca en domicilio', desc:'Instala y obtiene la conformidad del cliente.', tags:[['new','Nuevo']]} },
   { lane:'caja', node:{id:'end', type:'term', title:'✅ Entregado / Instalado', desc:'La cajera cierra el pedido'} },
