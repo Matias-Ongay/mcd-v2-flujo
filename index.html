@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>MCD Versión 2 · Flujo del pedido</title>
+<style>
+  :root{
+    --lane: 270px; --gap-row: 46px; --ink:#1f2933; --muted:#616e7c; --line:#7b8794;
+    --vend:#8b5cf6; --caja:#2f80ed; --dep:#e8a33d; --taller:#d6336c; --inst:#27ae60;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#eef1f5;font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink)}
+  header{padding:28px 40px 10px}
+  h1{margin:0;font-size:26px;letter-spacing:-.2px}
+  .sub{color:var(--muted);font-size:14px;margin-top:4px}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 18px;padding:10px 40px 18px;font-size:12.5px;color:#334e68}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .lg{width:14px;height:14px;border-radius:4px;display:inline-block}
+  .board{margin:0 40px 40px;background:#fff;border-radius:16px;box-shadow:0 2px 10px rgba(15,23,42,.06);padding:0 0 30px;overflow-x:auto}
+  .wrap{position:relative;width:calc(var(--lane) * 5);margin:0 auto}
+  .lanes-bg{position:absolute;inset:0;display:grid;grid-template-columns:repeat(5,var(--lane));pointer-events:none}
+  .lanes-bg div{border-right:1px dashed #d9e2ec}
+  .lanes-bg div:last-child{border-right:none}
+  .lanes-bg div:nth-child(odd){background:#fafbfd}
+  .heads{position:sticky;top:0;z-index:5;display:grid;grid-template-columns:repeat(5,var(--lane));background:#fff;border-bottom:1px solid #e4e7eb;padding:16px 0}
+  .head{margin:0 14px;border-radius:10px;padding:10px 12px;text-align:center;font-weight:700;font-size:14px;color:#fff;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  .head small{display:block;font-weight:500;font-size:11.5px;opacity:.9;margin-top:2px}
+  .grid{position:relative;z-index:2;display:grid;grid-template-columns:repeat(5,var(--lane));row-gap:var(--gap-row);padding-top:34px}
+  .cell{display:flex;align-items:center;justify-content:flex-start}
+  .slot{width:var(--lane);display:flex;justify-content:center;flex:none}
+  .minis{display:flex;gap:14px;align-items:center}
+  /* step card */
+  .card{position:relative;width:218px;background:#fff;border-radius:12px;padding:16px 14px 12px 16px;
+        box-shadow:0 2px 6px rgba(15,23,42,.08),0 0 0 1px #e4e7eb;border-left:6px solid var(--c)}
+  .num{position:absolute;top:-13px;left:-15px;width:30px;height:30px;border-radius:50%;background:#fff;border:2px solid var(--c);
+       color:var(--c);font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+  .title{font-weight:700;font-size:14px;line-height:1.25}
+  .desc{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.35}
+  .tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+  .tag{font-size:10.5px;font-weight:600;padding:3px 7px;border-radius:999px;background:#f0f4f8;color:#334e68}
+  .tag.state{background:color-mix(in srgb,var(--c) 14%,#fff);color:color-mix(in srgb,var(--c) 75%,#000)}
+  .tag.v1{background:#e4e7eb;color:#52606d}
+  .tag.new{background:#e3f9e5;color:#0e7c3a}
+  .tag.red{background:#ffe3e3;color:#c92a2a}
+  /* decision */
+  .dec{position:relative;width:178px;height:104px;display:flex;align-items:center;justify-content:center;text-align:center}
+  .dec::before{content:"";position:absolute;inset:0;background:var(--c);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+  .dec::after{content:"";position:absolute;inset:2.5px;background:#fff;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+  .dec span{position:relative;z-index:1;font-weight:700;font-size:13px;line-height:1.2;max-width:110px}
+  /* mini cards */
+  .mini{width:168px;border-radius:10px;padding:9px 11px;font-size:12px;line-height:1.3;background:#fff;box-shadow:0 0 0 1.5px var(--mc) inset}
+  .mini b{display:block;font-size:12.5px;margin-bottom:2px}
+  .mini.warn{--mc:#f2711c;background:#fff4e8}
+  .mini.stop{--mc:#e03131;background:#fff5f5}
+  .mini.late{--mc:#e03131;background:#fff5f5}
+  .mini.future{--mc:#9aa5b1;box-shadow:none;border:1.5px dashed #9aa5b1;color:#52606d}
+  .mini.done{--mc:#27ae60;background:#ebfbee}
+  .mini.info{--mc:#d6336c;background:#fff0f6}
+  /* terminal */
+  .term{width:230px;border-radius:999px;background:#27ae60;color:#fff;text-align:center;padding:14px 16px;font-weight:800;font-size:15px;box-shadow:0 3px 8px rgba(39,174,96,.35)}
+  .term small{display:block;font-weight:500;font-size:11.5px;opacity:.95}
+  /* arrows */
+  svg.arrows{position:absolute;left:0;top:0;z-index:1;overflow:visible;pointer-events:none}
+  .elabel{position:absolute;z-index:3;font-size:11px;font-weight:700;background:#fff;padding:1px 6px;border-radius:6px;color:#334e68;box-shadow:0 0 0 1px #d9e2ec;white-space:nowrap}
+  footer{margin:0 40px 40px;color:var(--muted);font-size:12.5px;line-height:1.6}
+  @media print{body{background:#fff}.board{box-shadow:none;margin:0}header,.legend,footer{padding-left:10px}.heads{position:static}}
+</style>
+</head>
+<body>
+<header>
+  <h1>MCD · Versión 2 — Flujo del pedido después de la venta</h1>
+  <div class="sub">Proceso acordado en la reunión del 12/11/2026 · desde la cotización hasta la entrega o instalación</div>
+</header>
+<div class="legend">
+  <span><i class="lg" style="background:#e4e7eb"></i>Hoy en MCD</span>
+  <span><i class="lg" style="background:#b2f2bb"></i>Nuevo en V2</span>
+  <span><i class="lg" style="background:#fff4e8;box-shadow:0 0 0 1.5px #f2711c inset"></i>Alerta naranja: falta tela</span>
+  <span><i class="lg" style="background:#fff5f5;box-shadow:0 0 0 1.5px #e03131 inset"></i>Alerta roja / bloqueo</span>
+  <span><i class="lg" style="border:1.5px dashed #9aa5b1"></i>Fase posterior / a confirmar</span>
+</div>
+
+<div class="board">
+  <div class="wrap" id="wrap">
+    <div class="lanes-bg"><div></div><div></div><div></div><div></div><div></div></div>
+    <div class="heads">
+      <div class="head" style="background:var(--vend)">Vendedora<small>cotiza y avisa al cliente</small></div>
+      <div class="head" style="background:var(--caja)">Cajera<small>rol nuevo</small></div>
+      <div class="head" style="background:var(--dep)">Encargado de depósito<small>rol nuevo</small></div>
+      <div class="head" style="background:var(--taller)">Taller externo<small>confección · roller</small></div>
+      <div class="head" style="background:var(--inst)">Instalador<small>colocación</small></div>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+
+<footer>
+  <b>Estados del pedido:</b> Enviado a facturar → Trabajo señado para producción → Trabajo en preparación (🟠 falta tela · 🔴 +7 días) → Trabajo en taller (🔴 +7 días) → Trabajo terminado → Listo para entregar → Instalación programada → Entregado / Instalado.<br>
+  <b>Fases posteriores:</b> seguimiento de cotizaciones y avisos por WhatsApp, reclamos, botón de pago, turnos de medición.
+</footer>
+
+<script>
+const LANES = { vend:0, caja:1, dep:2, taller:3, inst:4 };
+const COLORS = { vend:'var(--vend)', caja:'var(--caja)', dep:'var(--dep)', taller:'var(--taller)', inst:'var(--inst)' };
+
+// row, lane, node, optional minis (rendered to the right, spilling into the next lane)
+const ROWS = [
+  { lane:'vend', node:{id:'n1', type:'step', n:1, title:'Cotización y presupuesto', desc:'Carga productos, medidas y genera el PDF para el cliente.', tags:[['v1','Hoy en MCD']]} },
+  { lane:'vend', node:{id:'d1', type:'dec', title:'¿El cliente aprueba?'},
+    minis:[{id:'m_seg', kind:'future', title:'Seguimiento', text:'Alerta / WhatsApp a quien no cerró (fase posterior)'}] },
+  { lane:'vend', node:{id:'n2', type:'step', n:2, title:'Envía a facturar', desc:'Se crea el pedido en Tango con su número.', tags:[['v1','Hoy en MCD'],['state','Enviado a facturar']]} },
+  { lane:'caja', node:{id:'n3', type:'step', n:3, title:'Bandeja de caja · legajo', desc:'MCD detecta la facturación vía la API de pedidos de Tango. La cajera crea el legajo LB‑n° cotización y registra la seña (40%) o el pago total.', tags:[['new','Nuevo'],['state','Trabajo señado p/ producción']]} },
+  { lane:'caja', node:{id:'d2', type:'dec', title:'¿Tiene seña?'},
+    minis:[{id:'m_stop', kind:'stop', title:'⛔ Sin seña', text:'No se inicia el trabajo'}] },
+  { lane:'caja', node:{id:'d3', type:'dec', title:'¿Lleva confección?'},
+    minis:[{id:'m_prod', kind:'done', title:'🛍️ Producto final', text:'El cliente retira → Entregado'}] },
+  { lane:'dep', node:{id:'n4', type:'step', n:4, title:'Revisa la orden de taller', desc:'Ve el detalle y el total de metros por tela.', tags:[['new','Nuevo']]} },
+  { lane:'dep', node:{id:'d4', type:'dec', title:'¿Hay tela?'},
+    minis:[{id:'m_tela', kind:'warn', title:'🟠 Falta tela', text:'Notifica a gerencia. Sigue cuando llega.'}] },
+  { lane:'dep', node:{id:'n5', type:'step', n:5, title:'Corta telas y asigna taller', desc:'Elige el taller; queda registrado para su pago.', tags:[['state','Trabajo en preparación'],['red','🔴 +7 días']]} },
+  { lane:'taller', node:{id:'n6', type:'step', n:6, title:'Elabora el trabajo', desc:'Confección o roller del proveedor. La orden de taller va impresa.', tags:[['state','Trabajo en taller'],['red','🔴 máx. 7 días']]},
+    minis:[{id:'m_liq', kind:'info', title:'💵 Liquidación', text:'Cuánto pagarle al taller (cálculo inverso)'}] },
+  { lane:'dep', node:{id:'n7', type:'step', n:7, title:'Recibe y controla', desc:'Revisa el trabajo terminado y lo deja en la estantería.', tags:[['state','Trabajo terminado']]},
+    minis:[{id:'m_mal', kind:'future', title:'Si viene mal', text:'¿Vuelve al taller? (a confirmar)'}] },
+  { lane:'vend', span2:true, node:{id:'n8', type:'step', n:8, title:'Avisa al cliente: vendedora o cajera', desc:'🔔 Ambas reciben la notificación con el saldo pendiente; cualquiera de las dos llama al cliente.', tags:[['new','Nuevo'],['state','Listo para entregar']]} },
+  { lane:'caja', node:{id:'n9', type:'step', n:9, title:'Cobra el saldo', desc:'El cliente cancela antes de retirar o de la instalación.', tags:[['new','Nuevo']]} },
+  { lane:'caja', node:{id:'d5', type:'dec', title:'¿Con instalación?'},
+    minis:[{id:'m_ret', kind:'done', title:'El cliente retira', text:'→ Entregado'}] },
+  { lane:'caja', node:{id:'n10', type:'step', n:10, title:'Agenda la instalación', desc:'Asigna turno e instalador en el calendario y envía la orden de instalación.', tags:[['new','Nuevo'],['state','Instalación programada']]} },
+  { lane:'dep', node:{id:'n11', type:'step', n:11, title:'Arma el pedido', desc:'Suma rieles y accesorios. Revisión final junto a la cajera.', tags:[['new','Nuevo']]} },
+  { lane:'inst', node:{id:'n12', type:'step', n:12, title:'Coloca en domicilio', desc:'Instala y obtiene la conformidad del cliente.', tags:[['new','Nuevo']]} },
+  { lane:'caja', node:{id:'end', type:'term', title:'✅ Entregado / Instalado', desc:'La cajera cierra el pedido'} },
+];
+
+const EDGES = [
+  ['n1','d1'], ['d1','n2','Sí'], ['d1','m_seg','No','side'],
+  ['n2','n3'], ['n3','d2'], ['d2','d3','Sí'], ['d2','m_stop','No','side'],
+  ['d3','n4','Sí'], ['d3','m_prod','No','side'],
+  ['n4','d4'], ['d4','n5','Sí'], ['d4','m_tela','No','side'],
+  ['n5','n6'], ['n6','m_liq','','side'], ['n6','n7'], ['n7','m_mal','','side'],
+  ['n7','n8'], ['n8','n9'], ['n9','d5'], ['d5','n10','Sí'], ['d5','m_ret','No','side'],
+  ['n10','n11'], ['n11','n12'], ['n12','end'],
+];
+
+const grid = document.getElementById('grid');
+function el(tag, cls, html){ const e=document.createElement(tag); if(cls) e.className=cls; if(html!=null) e.innerHTML=html; return e; }
+
+function renderNode(nd, laneKey){
+  const c = COLORS[laneKey];
+  let e;
+  if(nd.type==='step'){
+    e = el('div','card');
+    e.innerHTML = `<div class="num">${nd.n}</div><div class="title">${nd.title}</div><div class="desc">${nd.desc}</div>` +
+      (nd.tags?`<div class="tags">${nd.tags.map(([k,t])=>`<span class="tag ${k}">${t}</span>`).join('')}</div>`:'');
+  } else if(nd.type==='dec'){
+    e = el('div','dec',`<span>${nd.title}</span>`);
+  } else {
+    e = el('div','term',`${nd.title}<small>${nd.desc}</small>`);
+  }
+  e.style.setProperty('--c', c);
+  e.id = nd.id;
+  return e;
+}
+
+ROWS.forEach((r, i)=>{
+  const cell = el('div','cell');
+  const lane = LANES[r.lane];
+  const span = (r.minis || r.span2) ? Math.min(2, 5-lane) : 1;
+  cell.style.gridRow = (i+1);
+  cell.style.gridColumn = `${lane+1} / span ${span}`;
+  const slot = el('div','slot'); slot.appendChild(renderNode(r.node, r.lane)); cell.appendChild(slot);
+  if(r.span2){ slot.style.width = 'calc(var(--lane) * 2)'; const n = slot.firstChild; n.style.width='300px'; n.style.borderLeft='none'; n.style.backgroundImage='linear-gradient(90deg,var(--vend) 0 6px,transparent 6px)'; n.style.boxShadow='0 2px 6px rgba(15,23,42,.08),0 0 0 1px #e4e7eb, inset -6px 0 0 var(--caja)'; }
+  if(r.minis){
+    const box = el('div','minis');
+    r.minis.forEach(m=>{ const me=el('div','mini '+m.kind,`<b>${m.title}</b>${m.text}`); me.id=m.id; box.appendChild(me); });
+    cell.appendChild(box);
+  }
+  grid.appendChild(cell);
+});
+
+const wrap = document.getElementById('wrap');
+function rect(id){
+  const a=document.getElementById(id).getBoundingClientRect(), w=wrap.getBoundingClientRect();
+  return {l:a.left-w.left, r:a.right-w.left, t:a.top-w.top, b:a.bottom-w.top, cx:(a.left+a.right)/2-w.left, cy:(a.top+a.bottom)/2-w.top};
+}
+
+function draw(){
+  wrap.querySelectorAll('svg.arrows,.elabel').forEach(x=>x.remove());
+  const NS='http://www.w3.org/2000/svg';
+  const svg=document.createElementNS(NS,'svg'); svg.classList.add('arrows');
+  svg.setAttribute('width', wrap.scrollWidth); svg.setAttribute('height', wrap.scrollHeight);
+  svg.innerHTML = `<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#52606d"/></marker></defs>`;
+  const R=10;
+  EDGES.forEach(([f,t,label,mode])=>{
+    const a=rect(f), b=rect(t); let d, lx, ly;
+    if(mode==='side'){
+      d=`M${a.r},${a.cy} H${b.l-2}`; lx=(a.r+b.l)/2; ly=a.cy-18;
+    } else if(Math.abs(a.cx-b.cx)<4){
+      d=`M${a.cx},${a.b} V${b.t-2}`; lx=a.cx+8; ly=a.b+6;
+    } else {
+      const ym=b.t-24, dir=b.cx>a.cx?1:-1;
+      d=`M${a.cx},${a.b} V${ym-R} Q${a.cx},${ym} ${a.cx+dir*R},${ym} H${b.cx-dir*R} Q${b.cx},${ym} ${b.cx},${ym+R} V${b.t-2}`;
+      lx=a.cx+8; ly=a.b+4;
+    }
+    const p=document.createElementNS(NS,'path');
+    p.setAttribute('d',d); p.setAttribute('fill','none'); p.setAttribute('stroke','#7b8794');
+    p.setAttribute('stroke-width','1.8'); p.setAttribute('marker-end','url(#ah)');
+    if(t.startsWith('m_') && (t==='m_seg'||t==='m_mal'||t==='m_liq')) p.setAttribute('stroke-dasharray','5 4');
+    svg.appendChild(p);
+    if(label){ const L=el('div','elabel',label); L.style.left=lx+'px'; L.style.top=ly+'px'; if(mode==='side') L.style.transform='translateX(-50%)'; wrap.appendChild(L); }
+  });
+  wrap.appendChild(svg);
+}
+window.addEventListener('load', draw);
+window.addEventListener('resize', draw);
+document.fonts && document.fonts.ready.then(draw);
+</script>
+</body>
+</html>
